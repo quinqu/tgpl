@@ -1,16 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	converter "./exercise2-2"
 )
 
 func main() {
 
-	if len(os.Args) > 0 {
+	if len(os.Args[1:]) > 0 {
 		for _, arg := range os.Args[1:] {
 			t, err := strconv.ParseFloat(arg, 64)
 			if err != nil {
@@ -24,6 +26,24 @@ func main() {
 	} else {
 
 		//use standard input
+		fmt.Println("Enter numbers separated by a space: ")
+
+		inputReader := bufio.NewScanner(os.Stdin)
+
+		inputReader.Scan()
+		input := inputReader.Text()
+		values := strings.Split(input, " ")
+
+		for i := 0; i < len(values); i++ {
+			y, err := strconv.ParseFloat(values[i], 64)
+			if err != nil {
+				fmt.Println("ERROR:", err)
+				fmt.Print(values[i], "was not a valid number!")
+			} else {
+				convert(y)
+			}
+
+		}
 
 	}
 
