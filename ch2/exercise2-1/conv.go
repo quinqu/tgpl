@@ -18,4 +18,4 @@ func KToF(k Kelvin) Fahrenheit {
 	return Fahrenheit(CToF(c))
 }
 
-func KToC(k Kelvin) Celsius { return Celsius(k - 273.15) }
+func KToC(k Kelvin) Celsius { return Celsius(k + Kelvin(AbsoluteZeroC)) }
