@@ -20,3 +20,14 @@ func PopCount(x uint64) int {
 		pc[byte(x>>(6*8))] +
 		pc[byte(x>>(7*8))])
 }
+
+func PopCountShift(x uint64) int {
+	var count int
+	for i := 0; i < 64; i++ { // shift through 64 bit positions
+		if x&1 > 0 {
+			count++
+		}
+		x = x >> 1 // x = x / 2^1
+	}
+	return count
+}
