@@ -1,0 +1,4 @@
+hello world i am learning go and it's very interesting
+i am going to type some random text random random random
+hello
+golang
