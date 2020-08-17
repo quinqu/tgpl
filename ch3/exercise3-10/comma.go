@@ -19,19 +19,20 @@ func comma(s string) string {
 	if n <= 3 {
 		return s
 	}
-	byteSlice := []byte(s)
-	var j = 0
-	for i := 3; i < len(byteSlice); i += 2 {
-		buf.WriteString(s[j : i-1])
-		if i-1 < len(byteSlice) && i-2 < len(byteSlice) {
+
+	offset := n % 3
+	if offset > 0 {
+		buf.WriteString(s[0:offset])
+		buf.WriteByte(',')
+	}
+	s = s[offset:]
+	
+	for i := len(s); i > 0; i -= 3{
+		buf.WriteString(s[i-3 : i])
+		if i > 3 {
 			buf.WriteByte(',')
 		}
-		j = i - 1
+		
 	}
-
-	if j + 1 < len(byteSlice) {
-		buf.WriteString(s[j:])
-	}
-
 	return buf.String()
 }
