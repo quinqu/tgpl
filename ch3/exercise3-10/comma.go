@@ -27,9 +27,9 @@ func comma(s string) string {
 	}
 	s = s[offset:]
 	
-	for i := len(s); i > 0; i -= 3{
-		buf.WriteString(s[i-3 : i])
-		if i > 3 {
+	for i := 0; i < len(s); i += 3{
+		buf.WriteString(s[i: i+3])
+		if i < len(s)- 3 {
 			buf.WriteByte(',')
 		}
 		
