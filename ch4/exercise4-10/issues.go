@@ -4,19 +4,60 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"./github"
 )
 
-//!+
+const (
+	Day = time.Hour * 24
+
+	Year = Day * 365
+
+	Month = Year / 12
+)
+
+type Categories struct {
+	Today, ThisMonth, ThisYear, Older []github.Issue
+}
+
+func (c *Categories) ToMap() map[string][]github.Issue {
+	return map[string][]github.Issue{
+		"today":      c.Today,
+		"this-month": c.ThisMonth,
+		"this-year":  c.ThisYear,
+		"older":      c.Older,
+	}
+}
+
 func main() {
 	result, err := github.SearchIssues(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%d issues:\n", result.TotalCount)
+
+	var cats Categories
 	for _, item := range result.Items {
-		fmt.Printf("#%-5d %9.9s %.55s\n",
-			item.Number, item.User.Login, item.Title)
+		age := time.Since(item.CreatedAt)
+		switch {
+		case age < Day:
+			cats.Today = append(cats.Today, item)
+		case age < Month:
+			cats.ThisMonth = append(cats.ThisMonth, item)
+		case age < Year:
+			cats.ThisYear = append(cats.ThisYear, item)
+		default:
+			cats.Older = append(cats.Older, item)
+		}
+	}
+
+	for k, v := range cats.ToMap() {
+		if len(v) < 1 {
+			continue
+		}
+		fmt.Printf("\n------ %s ------\n", k)
+		for _, issue := range v {
+			fmt.Printf("  Issue %d: %s\n", issue.Number, issue.CreatedAt)
+		}
 	}
 }
