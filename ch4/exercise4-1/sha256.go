@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/sha256" //!+
+	"crypto/sha256" 
 	"fmt"
 )
 
@@ -16,10 +16,21 @@ func init() {
 func main() {
 	c1 := sha256.Sum256([]byte("x"))
 	c2 := sha256.Sum256([]byte("X"))
-	fmt.Printf("%x\n%x\n%t\n%T\n", c1, c2, c1 == c2, c1)
+	fmt.Print(diff(c1, c2))
 	// Output:
 	// 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881
 	// 4b68ab3847feda7d6c62c1fbcbeebfa35eab7351ed5e78f4ddadea5df64b8015
 	// false
 	// [32]uint8
+}
+
+func diff(b1, b2 [32]byte) int {
+	var count int
+	for i := 0; i < sha256.Size; i++ {
+		// iterating over the bits and finding the difference, add to count
+		// pc[difference]
+		diff := pc[b1[i]^b2[i]]
+		count += int(diff)
+	}
+	return count
 }
