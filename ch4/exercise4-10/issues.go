@@ -39,6 +39,7 @@ func main() {
 	var cats Categories
 	for _, item := range result.Items {
 		age := time.Since(item.CreatedAt)
+
 		switch {
 		case age < Day:
 			cats.Today = append(cats.Today, item)
@@ -46,18 +47,16 @@ func main() {
 			cats.ThisMonth = append(cats.ThisMonth, item)
 		case age < Year:
 			cats.ThisYear = append(cats.ThisYear, item)
-		default:
+		case age > Year:
 			cats.Older = append(cats.Older, item)
 		}
 	}
 
 	for k, v := range cats.ToMap() {
-		if len(v) < 1 {
-			continue
-		}
+
 		fmt.Printf("\n------ %s ------\n", k)
 		for _, issue := range v {
-			fmt.Printf("  Issue %d: %s\n", issue.Number, issue.CreatedAt)
+			fmt.Printf("  Issue %d: %s - %s\n", issue.Number, issue.Title, issue.CreatedAt)
 		}
 	}
 }
