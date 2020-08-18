@@ -22,15 +22,9 @@ func comma(s string) string {
 	splitString = strings.Split(s, ".")
 	var buf bytes.Buffer
 
-	if signMatch {
-		if len(splitString[0][1:]) <= 3 {
-			return s
-		}
-	} else {
-		if len(splitString[0]) <= 3 {
-			return s
-		}
-	}
+	if signMatch && len(splitString[0][1:]) <= 3 || len(splitString[0]) <= 3{
+		return s
+	} 
 
 	if match && signMatch {
 		sign := splitString[0][0]
