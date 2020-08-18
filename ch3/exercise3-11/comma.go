@@ -14,32 +14,48 @@ func main() {
 	}
 }
 
-//!+
-// comma inserts commas in a non-negative decimal integer string.
 func comma(s string) string {
 
-	match, _ := regexp.MatchString("\\.", s) //true or false
-
+	match, _ := regexp.MatchString("\\.", s)
+	signMatch, _ := regexp.MatchString("[+-]", s)
 	var splitString []string
 	splitString = strings.Split(s, ".")
+	var buf bytes.Buffer
 
-	if len(splitString[0]) <= 3 {
-		return s
+	if signMatch {
+		if len(splitString[0][1:]) <= 3 {
+			return s
+		}
+	} else {
+		if len(splitString[0]) <= 3 {
+			return s
+		}
 	}
 
-	if match {
-		buf := insertCommas(splitString[0])
+	if match && signMatch {
+		sign := splitString[0][0]
+		buf.WriteByte(sign)
+		buf = insertCommas(buf, splitString[0][1:])
+		buf.WriteString("." + splitString[1])
+		return buf.String()
+
+	} else if match == false && signMatch {
+		sign := splitString[0][0]
+		buf.WriteByte(sign)
+		buf = insertCommas(buf, splitString[0][1:])
+		return buf.String()
+
+	} else if match {
+		buf = insertCommas(buf, splitString[0])
 		buf.WriteString("." + splitString[1])
 		return buf.String()
 	}
 
-	buf := insertCommas(s)
+	buf = insertCommas(buf, s)
 	return buf.String()
 }
 
-func insertCommas(s string) bytes.Buffer {
-
-	var buf bytes.Buffer
+func insertCommas(buf bytes.Buffer, s string) bytes.Buffer {
 	n := len(s)
 
 	offset := n % 3
