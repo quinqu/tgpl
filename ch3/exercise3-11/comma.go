@@ -16,35 +16,42 @@ func main() {
 
 func comma(s string) string {
 
-	match, _ := regexp.MatchString("\\.", s)
-	signMatch, _ := regexp.MatchString("[+-]", s)
+	pointMatch, err := regexp.MatchString("\\.", s)
+	if err != nil {
+		return s + ": " + err.Error()
+	}
+	signMatch, err := regexp.MatchString("[+-]", s)
+	if err != nil {
+		return s + ": " + err.Error()
+	}
+
 	var splitString []string
 	splitString = strings.Split(s, ".")
 	var buf bytes.Buffer
 
-	if (signMatch && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3{
+	if (signMatch && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3 {
 		return s
-	} 
+	}
 
-	if match && signMatch {
-		sign := splitString[0][0]
+	if signMatch {
+		sign := s[0]
 		buf.WriteByte(sign)
-		buf = insertCommas(buf, splitString[0][1:])
-		buf.WriteString("." + splitString[1])
-		return buf.String()
+		s = splitString[0][1:]
 
-	} else if match == false && signMatch {
-		sign := splitString[0][0]
-		buf.WriteByte(sign)
-		buf = insertCommas(buf, splitString[0][1:])
-		return buf.String()
-
-	} else if match {
-		buf = insertCommas(buf, splitString[0])
+		if pointMatch {
+			buf = insertCommas(buf, s)
+			buf.WriteString("." + splitString[1])
+			return buf.String()
+		} else {
+			buf = insertCommas(buf, s)
+			return buf.String()
+		}
+	} else if pointMatch {
+		s = splitString[0]
+		buf = insertCommas(buf, s)
 		buf.WriteString("." + splitString[1])
 		return buf.String()
 	}
-
 	buf = insertCommas(buf, s)
 	return buf.String()
 }
