@@ -3,12 +3,10 @@ package main
 import (
 	"bufio"
 	"crypto/sha256"
-    "crypto/sha512"
+	"crypto/sha512"
 	"flag"
 	"fmt"
 	"os"
-
-
 )
 
 func main() {
@@ -27,9 +25,8 @@ func main() {
 		fmt.Println("Converted to SHA512")
 		fmt.Println(sha512.Sum512([]byte(input)))
 
-	}else {
+	} else {
 		fmt.Println("Converted to SHA256")
 		fmt.Println(sha256.Sum256([]byte(input)))
 	}
 }
-
