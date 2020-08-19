@@ -1,17 +1,35 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"crypto/sha256"
+    "crypto/sha512"
+	"flag"
+	"fmt"
+	"os"
 
-//!+
-import "crypto/sha256"
+
+)
 
 func main() {
-	c1 := sha256.Sum256([]byte("x"))
-	c2 := sha256.Sum256([]byte("X"))
-	fmt.Printf("%x\n%x\n%t\n%T\n", c1, c2, c1 == c2, c1)
-	// Output:
-	// 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881
-	// 4b68ab3847feda7d6c62c1fbcbeebfa35eab7351ed5e78f4ddadea5df64b8015
-	// false
-	// [32]uint8
+
+	var s384 = flag.Bool("sha384", false, "generate sha384 hash")
+	var s512 = flag.Bool("sha512", false, "generate sha512 hash")
+	flag.Parse()
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Input: ")
+	input, _ := reader.ReadString('\n')
+
+	if *s384 {
+		fmt.Println("Converted to SHA384")
+		fmt.Println(sha512.Sum384([]byte(input)))
+	} else if *s512 {
+		fmt.Println("Converted to SHA512")
+		fmt.Println(sha512.Sum512([]byte(input)))
+
+	}else {
+		fmt.Println("Converted to SHA256")
+		fmt.Println(sha256.Sum256([]byte(input)))
+	}
 }
+
