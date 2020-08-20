@@ -16,29 +16,27 @@ func main() {
 
 func comma(s string) string {
 
-	pointMatch, err := regexp.MatchString("\\.", s)
-	if err != nil {
-		return s + ": " + err.Error()
-	}
-	signMatch, err := regexp.MatchString("[+-]", s)
-	if err != nil {
-		return s + ": " + err.Error()
-	}
 
+	pointRe := regexp.MustCompile("\\.")
+	signRe:= regexp.MustCompile("[+-]")
+
+	pointMatch := pointRe.FindString(s)
+	signMatch := signRe.FindString(s)
+	
 	var splitString []string
 	splitString = strings.Split(s, ".")
 	var buf bytes.Buffer
 
-	if (signMatch && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3 {
+	if (signMatch != "" && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3 {
 		return s
 	}
 
-	if signMatch {
+	if signMatch != "" {
 		sign := s[0]
 		buf.WriteByte(sign)
 		s = splitString[0][1:]
 
-		if pointMatch {
+		if pointMatch != "" {
 			buf = insertCommas(buf, s)
 			buf.WriteString("." + splitString[1])
 			return buf.String()
@@ -46,7 +44,7 @@ func comma(s string) string {
 			buf = insertCommas(buf, s)
 			return buf.String()
 		}
-	} else if pointMatch {
+	} else if pointMatch != "" {
 		s = splitString[0]
 		buf = insertCommas(buf, s)
 		buf.WriteString("." + splitString[1])
