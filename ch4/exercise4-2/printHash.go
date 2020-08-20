@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"encoding/hex"
 )
 
 func main() {
@@ -18,15 +19,21 @@ func main() {
 	fmt.Println("Input: ")
 	input, _ := reader.ReadString('\n')
 
-	if *s384 {
+	var b []byte
+	if  *s384{
 		fmt.Println("Converted to SHA384")
-		fmt.Println(sha512.Sum384([]byte(input)))
+		conv := sha512.Sum384([]byte(input))
+		b = conv[:]
+		fmt.Println(hex.EncodeToString(b))
 	} else if *s512 {
 		fmt.Println("Converted to SHA512")
-		fmt.Println(sha512.Sum512([]byte(input)))
-
+		conv := sha512.Sum512([]byte(input))
+		b = conv[:]
+		fmt.Println(hex.EncodeToString(b))
 	} else {
 		fmt.Println("Converted to SHA256")
-		fmt.Println(sha256.Sum256([]byte(input)))
+		conv := sha256.Sum256([]byte(input))
+		b = conv[:]
+		fmt.Println(hex.EncodeToString(b))
 	}
 }
