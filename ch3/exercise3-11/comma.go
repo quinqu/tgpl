@@ -16,40 +16,32 @@ func main() {
 
 func comma(s string) string {
 
-
 	pointRe := regexp.MustCompile("\\.")
-	signRe:= regexp.MustCompile("[+-]")
+	signRe := regexp.MustCompile("[+-]")
 
-	pointMatch := pointRe.FindString(s)
-	signMatch := signRe.FindString(s)
-	
+	pointMatch := pointRe.Match([]byte(s))
+	signMatch := signRe.Match([]byte(s))
+
 	var splitString []string
 	splitString = strings.Split(s, ".")
 	var buf bytes.Buffer
 
-	if (signMatch != "" && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3 {
+	if (signMatch && len(splitString[0][1:]) <= 3) || len(splitString[0]) <= 3 {
 		return s
 	}
 
-	if signMatch != "" {
-		sign := s[0]
-		buf.WriteByte(sign)
-		s = splitString[0][1:]
+	if signMatch {
+		buf.WriteByte(s[0])
+		s = s[1:]
+	}
 
-		if pointMatch != "" {
-			buf = insertCommas(buf, s)
-			buf.WriteString("." + splitString[1])
-			return buf.String()
-		} else {
-			buf = insertCommas(buf, s)
-			return buf.String()
-		}
-	} else if pointMatch != "" {
-		s = splitString[0]
-		buf = insertCommas(buf, s)
+	if pointMatch {
+		splitString = strings.Split(s, ".")
+		buf = insertCommas(buf, splitString[0])
 		buf.WriteString("." + splitString[1])
 		return buf.String()
 	}
+
 	buf = insertCommas(buf, s)
 	return buf.String()
 }
