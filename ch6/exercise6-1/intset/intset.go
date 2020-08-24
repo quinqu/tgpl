@@ -40,11 +40,7 @@ func (s *IntSet) UnionWith(t *IntSet) {
 	}
 }
 
-//!-intset
-
-//!+string
-
-// String returns the set as a string of the form "{1 2 3}".
+// Print IntSet
 func (s *IntSet) String() string {
 	var buf bytes.Buffer
 	buf.WriteByte('{')
@@ -87,12 +83,14 @@ func (s *IntSet) Remove(x int) {
 	s.words[word] &^= 1 << bit
 }
 
+// Clears IntSet
 func (s *IntSet) Clear() {
 	for i := range s.words {
 		s.words[i] = 0
 	}
 }
 
+// Copies IntSet
 func (s *IntSet) Copy() *IntSet {
 	var newIntSet IntSet
 	newIntSet.words = make([]uint64, len(s.words))
