@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func f(x string) string {
+var f = func (x string) string {
 	return x + x
 }
 
