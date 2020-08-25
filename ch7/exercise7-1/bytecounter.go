@@ -66,5 +66,11 @@ func main() {
 	fmt.Println(c) // "12", = len("hello, Dolly")
 	
 
-	
+	// word & line counter 
+	var wc WordCounter
+	fmt.Println(wc.Write([]byte("hello world, this is Go")))
+
+	var lc LineCounter
+	fmt.Println(lc.Write([]byte("hello\n world\n this\n is\n go")))
+
 }
