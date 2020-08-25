@@ -63,3 +63,9 @@ func (s *IntSet) String() string {
 	buf.WriteByte('}')
 	return buf.String()
 }
+
+func (s *IntSet) AddAll(nums ...int) {
+	for i := range nums {
+		s.Add(nums[i])
+	}
+}
