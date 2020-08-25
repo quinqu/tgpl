@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	
 )
 
 func main() {
@@ -13,7 +12,7 @@ func main() {
 
 func wordfreq(file string) {
 	wordCounts := make(map[string]int)
-    f, _ := os.Open(file)
+	f, _ := os.Open(file)
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanWords)
 
@@ -24,7 +23,7 @@ func wordfreq(file string) {
 		if found {
 			wordCounts[currentWord]++
 		} else {
-			wordCounts[currentWord] = 1 
+			wordCounts[currentWord] = 1
 		}
 	}
 

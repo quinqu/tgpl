@@ -53,7 +53,7 @@ func main() {
 				current = "grey"
 			}
 
-			fmt.Fprintf(file, "<polygon points='%g, %g %g,%g %g,%g %g,%g'" + " class=\"%s\"/>\n",
+			fmt.Fprintf(file, "<polygon points='%g, %g %g,%g %g,%g %g,%g'"+" class=\"%s\"/>\n",
 				ax, ay, bx, by, cx, cy, dx, dy, current)
 
 		}

@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
-	"encoding/hex"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	input, _ := reader.ReadString('\n')
 
 	var b []byte
-	if  *s384{
+	if *s384 {
 		fmt.Println("Converted to SHA384")
 		conv := sha512.Sum384([]byte(input))
 		b = conv[:]
