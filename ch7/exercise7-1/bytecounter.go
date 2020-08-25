@@ -2,21 +2,60 @@ package main
 
 import (
 	"fmt"
+	"bufio"
+	"bytes"
 )
 
-//!+bytecounter
-
 type ByteCounter int
+type LineCounter int
+type WordCounter int 
+
 
 func (c *ByteCounter) Write(p []byte) (int, error) {
 	*c += ByteCounter(len(p)) // convert int to ByteCounter
 	return len(p), nil
 }
 
-//!-bytecounter
+
+
+func (c *WordCounter) Write(p []byte) (int, error) {
+	var count int
+	buf := bytes.NewBuffer(p)
+	scanner := bufio.NewScanner(buf)
+	scanner.Split(bufio.ScanWords)
+
+	for scanner.Scan() {
+		count++
+	}
+
+	if err := scanner.Err(); err != nil {
+        return 0, err
+	}
+	
+	*c += WordCounter(count)
+	return count, nil
+}
+
+func (c *LineCounter) Write(p []byte) (int, error) {
+	var count int 
+
+	buf := bytes.NewBuffer(p)
+	scanner := bufio.NewScanner(buf)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		count++
+	}
+	if err := scanner.Err(); err != nil {
+        return 0, err
+	}
+	*c += LineCounter(count)
+
+	return count, nil
+}
 
 func main() {
-	//!+main
+	
 	var c ByteCounter
 	c.Write([]byte("hello"))
 	fmt.Println(c) // "5", = len("hello")
@@ -25,5 +64,7 @@ func main() {
 	var name = "Dolly"
 	fmt.Fprintf(&c, "hello, %s", name)
 	fmt.Println(c) // "12", = len("hello, Dolly")
-	//!-main
+	
+
+	
 }
