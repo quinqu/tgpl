@@ -58,7 +58,7 @@ func TestCopy(t *testing.T) {
 	x.Add(4091)
 
 	newCopy := x.Copy()
-	for i, _ := range x.words {
+	for i := range x.words {
 
 		if newCopy.words[i] != x.words[i] {
 			t.Error("values not copied over")
