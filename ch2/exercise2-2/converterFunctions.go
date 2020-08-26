@@ -1,6 +1,5 @@
 package converter
 
-
 // celcius + fahreheit
 func CToF(c Celsius) Fahrenheit { return Fahrenheit(c*9/5 + 32) }
 
@@ -15,4 +14,3 @@ func MetersToFeet(meters Meters) Feet { return Feet(meters * 3.281) }
 func PoundsToKilograms(pounds Pounds) Kilograms { return Kilograms(pounds / 2.205) }
 
 func KilogramsToPounds(kilograms Kilograms) Pounds { return Pounds(kilograms * 2.205) }
-

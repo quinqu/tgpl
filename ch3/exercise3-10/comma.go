@@ -12,7 +12,6 @@ func main() {
 	}
 }
 
-
 func comma(s string) string {
 	var buf bytes.Buffer
 	n := len(s)
@@ -26,13 +25,13 @@ func comma(s string) string {
 		buf.WriteByte(',')
 	}
 	s = s[offset:]
-	
-	for i := 0; i < len(s); i += 3{
-		buf.WriteString(s[i: i+3])
-		if i < len(s)- 3 {
+
+	for i := 0; i < len(s); i += 3 {
+		buf.WriteString(s[i : i+3])
+		if i < len(s)-3 {
 			buf.WriteByte(',')
 		}
-		
+
 	}
 	return buf.String()
 }
