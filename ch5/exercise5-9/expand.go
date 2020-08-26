@@ -1,29 +1,43 @@
-package expand
+package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
-var f = func(x string) string {
+type expandFn func(s string) string
 
-	args := os.Args[0:]
+func main() {
 
-	if len(args) == 0 {
-		return x
+	n, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		fmt.Print("could not convert to uint")
+	} else {
+		times := uint(n)
+		input := os.Args[2:]
+		s := strings.Join(input, " ")
+
+		out := expand(s, timesX(times))
+		fmt.Print(out)
 	}
-	
-	var buf bytes.Buffer
-
-	for i := 0; i < len(args); i++ {
-		buf.WriteByte(args[i][0])
-	}
-
-	return x + buf.String()
 }
 
-func expand(s string, f func(string) string) string {
+func timesX(x uint) expandFn {
+	f := func(s string) string {
+		var buf bytes.Buffer
+		var i uint
+		for i = 0; i < x; i++ {
+			buf.WriteString(s)
+		}
+		return buf.String()
+	}
+	return f
+}
+
+func expand(s string, f expandFn) string {
 
 	if len(s) < 1 {
 		return s
@@ -38,6 +52,6 @@ func expand(s string, f func(string) string) string {
 
 		}
 	}
-
-	return strings.Join(elements, " ")
+	result := strings.Join(elements, " ")
+	return strings.TrimSpace(result)
 }
