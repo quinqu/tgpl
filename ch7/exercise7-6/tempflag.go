@@ -1,4 +1,3 @@
-
 // Tempflag prints the value of its -temp (temperature) flag.
 package main
 
@@ -16,4 +15,3 @@ func main() {
 	flag.Parse()
 	fmt.Println(*temp)
 }
-
