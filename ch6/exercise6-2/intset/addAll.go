@@ -69,3 +69,20 @@ func (s *IntSet) AddAll(nums ...int) {
 		s.Add(nums[i])
 	}
 }
+
+func (intset *IntSet) toSlice() []int {
+	var newSlice []int
+	for i, word := range intset.words {
+		if word == 0 {
+			continue
+		}
+
+		for j := 0; j < 64; j++ {
+			if word&(1<<uint(j)) != 0 {
+				val := 64*i + j
+				newSlice = append(newSlice, val)
+			}
+		}
+	}
+	return newSlice
+}

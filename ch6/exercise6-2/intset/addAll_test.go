@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAddAll(t *testing.T) {
@@ -88,41 +90,24 @@ func TestEqual(t *testing.T) {
 	a3 := []int{1, 5}
 
 	if !equal(a1, a2) {
-		t.Error("Test Equal failure: returned false, expected true")
+		assert.Equal(t, a1, a2, "The two slices should be the same.")
 	}
 
 	if equal(a1, a3) {
-		t.Error("Test Equal Failure: returned true, expected false")
+		assert.Equal(t, a1, a3, "The two slices should NOT be the same.")
 	}
-
 }
 
 func equal(want []int, got []int) bool {
+
 	if len(want) != len(got) {
 		return false
 	}
 
-	for i, word := range got {
-		if word != want[i] {
+	for i := range got {
+		if got[i] != want[i] {
 			return false
 		}
 	}
 	return true
-}
-
-func (intset *IntSet) toSlice() []int {
-	var newSlice []int
-	for i, word := range intset.words {
-		if word == 0 {
-			continue
-		}
-
-		for j := 0; j < 64; j++ {
-			if word&(1<<uint(j)) != 0 {
-				val := 64*i + j
-				newSlice = append(newSlice, val)
-			}
-		}
-	}
-	return newSlice
 }
