@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 
-	"gopl.io/ch7/tempconv"
+	"./tempconv"
 )
 
 //!+
@@ -16,3 +16,4 @@ func main() {
 	flag.Parse()
 	fmt.Println(*temp)
 }
+
