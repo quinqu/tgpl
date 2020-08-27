@@ -2,16 +2,15 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"./tempconv"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-//!+
 var temp = tempconv.CelsiusFlag("temp", 20.0, "the temperature")
 
 func main() {
-	flag.Parse()
+	kingpin.Parse()
 	fmt.Println(*temp)
 }

@@ -1,8 +1,9 @@
 package tempconv
 
 import (
-	"flag"
 	"fmt"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 type Celsius float64
@@ -29,12 +30,16 @@ type Value interface {
 
 //!+celsiusflag
 // *celsiusFlag satisfies the flag.Value interface.
-type celsiusFlag struct{ Celsius }
+
+type celsiusFlag struct {
+	Celsius
+}
 
 func (f *celsiusFlag) Set(s string) error {
 	var unit string
 	var value float64
-	fmt.Sscanf(s, "%f%s", &value, &unit) // no error check needed
+
+	fmt.Sscanf(s, "%f%s", &value, &unit)
 	switch unit {
 	case "C", "°C":
 		f.Celsius = Celsius(value)
@@ -57,6 +62,9 @@ func (f *celsiusFlag) Set(s string) error {
 // The flag argument must have a quantity and a unit, e.g., "100C".
 func CelsiusFlag(name string, value Celsius, usage string) *Celsius {
 	f := celsiusFlag{value}
-	flag.CommandLine.Var(&f, name, usage)
+
+	kingpin.Flag(name, usage).Default("30.0K").SetValue(&f)
+	kingpin.Arg(name, usage).SetValue(&f)
+
 	return &f.Celsius
 }
