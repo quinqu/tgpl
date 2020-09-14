@@ -1,4 +1,3 @@
-// Clock is a TCP server that periodically writes the time.
 package main
 
 import (
@@ -6,7 +5,9 @@ import (
 	"log"
 	"net"
 	"time"
+	"flag"
 )
+//creating servers 
 
 func handleConn(c net.Conn) {
 	defer c.Close()
@@ -18,9 +19,13 @@ func handleConn(c net.Conn) {
 		time.Sleep(1 * time.Second)
 	}
 }
+var p = flag.String("port", "8000", "desired port number")
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:8000")
+	
+	flag.Parse()
+	host := "localhost:" + *p
+	listener, err := net.Listen("tcp", host)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,3 +40,5 @@ func main() {
 	}
 	//!-
 }
+
+
