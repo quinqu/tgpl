@@ -10,10 +10,12 @@ import (
 	"time"
 	"io"
 )
+
 type clock struct {
 	title string
 	host  string
 }
+
 func main() {
 	clockServers := []clock{}
 	times := os.Args[1:]
@@ -24,7 +26,6 @@ func main() {
 	}
 	for _, c := range clockServers {
 		conn, err := net.Dial("tcp", c.host) //connect to server that was created by clock
-
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -43,8 +44,11 @@ func (c clock) printTimes(conn io.Reader){
 	out := os.Stdout
 	scanner := bufio.NewScanner(conn) //scans the in the output from server in clock
 	for scanner.Scan() {
-		fmt.Print(out.WriteString(c.title))
-		fmt.Println(out.WriteString(scanner.Text()))
+		output, err := out.WriteString(c.title + ": " + scanner.Text())
+		if err != nil {
+			fmt.Printf("Could not retrieve time: %s", err)
+		}
+		fmt.Println(output)
 	}
 	if scanner.Err() != nil {
 		log.Fatal(scanner.Err())
