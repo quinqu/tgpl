@@ -1,14 +1,14 @@
- 
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"net"
 	"time"
-	"flag"
 )
-//creating servers 
+
+//creating servers
 
 func handleConn(c net.Conn) {
 	defer c.Close()
@@ -20,10 +20,11 @@ func handleConn(c net.Conn) {
 		time.Sleep(1 * time.Second)
 	}
 }
+
 var p = flag.String("port", "8000", "desired port number")
 
 func main() {
-	
+
 	flag.Parse()
 	host := "localhost:" + *p
 	listener, err := net.Listen("tcp", host)

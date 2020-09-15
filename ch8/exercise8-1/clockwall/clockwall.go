@@ -2,13 +2,12 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
 	"strings"
 	"time"
-	"io"
 )
 
 type clock struct {
@@ -29,26 +28,25 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		
-		defer conn.Close() // wait until goroutine has finished 
+		defer conn.Close() // wait until goroutine has finished
 		go c.printTimes(conn)
 	}
 
 	for {
-		time.Sleep(time.Minute)
+		time.Sleep(time.Second * 30)
 	}
 }
 
-func (c clock) printTimes(conn io.Reader){
-
+func (c clock) printTimes(conn io.Reader) {
 	out := os.Stdout
 	scanner := bufio.NewScanner(conn) //scans the in the output from server in clock
 	for scanner.Scan() {
 		output, err := out.WriteString(c.title + ": " + scanner.Text())
 		if err != nil {
-			fmt.Printf("Could not retrieve time: %s", err)
+			log.Fatal("Could not write time: ", err)
 		}
-		fmt.Println(output)
+		log.Println(output)
+
 	}
 	if scanner.Err() != nil {
 		log.Fatal(scanner.Err())
