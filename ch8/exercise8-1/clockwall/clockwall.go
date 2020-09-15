@@ -38,15 +38,10 @@ func main() {
 }
 
 func (c clock) printTimes(conn io.Reader) {
-	out := os.Stdout
-	scanner := bufio.NewScanner(conn) //scans the in the output from server in clock
+	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		output, err := out.WriteString(c.title + ": " + scanner.Text())
-		if err != nil {
-			log.Fatal("Could not write time: ", err)
-		}
+		output := c.title + ": " + scanner.Text()
 		log.Println(output)
-
 	}
 	if scanner.Err() != nil {
 		log.Fatal(scanner.Err())
