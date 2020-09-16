@@ -51,7 +51,7 @@ func main() {
 	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
 
-	for n < *depth+1 {
+	for n < *depth {
 		list := <-worklist
 		for _, link := range list { //here worklist is a channel
 			if !seen[link] {
