@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-var depth = flag.Int("depth", 1, "Only URLs reachable by at most `depth` links will be fetched")
+var depth = flag.Int("depth", 1, "Only URLs reachable by at most depth links will be fetched")
 
 func crawl(url string, n int) ([]string, int) {
 	fmt.Println(url)
@@ -50,7 +50,7 @@ func main() {
 	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
 	
-	for n < *depth {
+	for n < *depth + 1 {
 		list := <-worklist
 		for _, link := range list { //here worklist is a channel
 			if !seen[link] {
@@ -64,6 +64,6 @@ func main() {
 	if n >= *depth {
 		close(unseenLinks)
 	}
-	//}
+	
 
 }
