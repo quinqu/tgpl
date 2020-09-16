@@ -1,10 +1,11 @@
 package main
 
 import (
-	"./links"
 	"flag"
 	"fmt"
 	"log"
+
+	"./links"
 )
 
 var depth = flag.Int("depth", 1, "Only URLs reachable by at most depth links will be fetched")
@@ -29,17 +30,17 @@ func main() {
 	go func() {
 		worklist <- flag.Args()
 	}()
-	
+
 	// Create 20 crawler goroutines to fetch each unseen link.
 	for i := 0; i < 20; i++ {
 		go func() {
-			
+
 			for link := range unseenLinks {
-				
+
 				foundLinks, newN := crawl(link, n)
 				n = newN
 				go func() {
-					
+
 					worklist <- foundLinks
 				}()
 			}
@@ -49,8 +50,8 @@ func main() {
 	// The main goroutine de-duplicates worklist items
 	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
-	
-	for n < *depth + 1 {
+
+	for n < *depth+1 {
 		list := <-worklist
 		for _, link := range list { //here worklist is a channel
 			if !seen[link] {
@@ -58,12 +59,11 @@ func main() {
 				unseenLinks <- link
 			}
 		}
-		
+
 	}
 
 	if n >= *depth {
 		close(unseenLinks)
 	}
-	
 
 }
