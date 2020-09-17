@@ -4,13 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"sync"
 
 	"./links"
 )
 
 var depth = flag.Int("depth", 1, "Only URLs reachable by at most depth links will be fetched")
 
-func crawl(url string, n int) ([]string, int) {
+func crawl(url string, n int, wg *sync.WaitGroup) ([]string, int) {
+	defer wg.Done()
 	fmt.Println(url)
 	list, err := links.Extract(url)
 	if err != nil {
@@ -26,6 +28,7 @@ func main() {
 	worklist := make(chan []string)  // lists of URLs, may have duplicates
 	unseenLinks := make(chan string) // de-duplicated URLs
 	var n int
+	var wg sync.WaitGroup
 	// Add command-line arguments to worklist.
 	go func() {
 		worklist <- flag.Args()
@@ -36,24 +39,21 @@ func main() {
 		go func() {
 
 			for link := range unseenLinks {
-
-				foundLinks, newN := crawl(link, n)
+				wg.Add(1)
+				foundLinks, newN := crawl(link, n, &wg)
 				n = newN
 				go func() {
-
 					worklist <- foundLinks
 				}()
 			}
 		}()
 	}
 
-	// The main goroutine de-duplicates worklist items
-	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
 
 	for n < *depth {
 		list := <-worklist
-		for _, link := range list { //here worklist is a channel
+		for _, link := range list {
 			if !seen[link] {
 				seen[link] = true
 				unseenLinks <- link
@@ -61,9 +61,6 @@ func main() {
 		}
 
 	}
-
-	if n >= *depth {
-		close(unseenLinks)
-	}
+	wg.Wait()
 
 }
