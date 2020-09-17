@@ -1,184 +1,199 @@
 package main
 
 import (
+	"bytes"
+
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"gopl.io/ch5/links"
+	"golang.org/x/net/html"
 )
 
 type Page struct {
 	links []string
 }
 
-func (p *Page) listUrls() []string {
-	return p.links
-}
-
-func crawl(url string) []string {
-	fmt.Println(url)
-	list, err := links.Extract(url)
-	if err != nil {
-		log.Print(err)
+func savePage(resp *http.Response, body io.Reader) error {
+	u := resp.Request.URL
+	filename := filepath.Join(u.Host, u.Path)
+	if filepath.Ext(u.Path) == "" {
+		filename = filepath.Join(u.Host, u.Path, "index.html")
 	}
-
-	return list
-}
-
-func save(urlName string, p *Page) error {
-	r, err := url.Parse(urlName)
+	err := os.MkdirAll(filepath.Dir(filename), 0777)
 	if err != nil {
 		return err
 	}
-
-	path := r.Path
-	if path == "" {
-		path = "index.html"
-	}
-
-	path = filepath.Join("./output", path)
-
-	dir := filepath.Dir(path)
-
-	os.MkdirAll(dir, 0700)
-
-	file, err := os.Create(path)
-
+	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	for _, link := range p.links {
-		_, err := fmt.Fprintln(file, link)
-		if err != nil {
-			return err
-		}
+	if body != nil {
+		_, err = io.Copy(file, body)
+	} else {
+		_, err = io.Copy(file, resp.Body)
+	}
+	if err != nil {
+		log.Print("save: ", err)
+	}
+	err = file.Close()
+	if err != nil {
+		log.Print("save: ", err)
 	}
 	return nil
 }
 
 func downloadPage(link string) (*Page, error) {
-
-	r, err := url.Parse(link)
-
-	if err != nil {
-		return nil, err
-	}
-	domain := r.Hostname()
-	list, err := links.Extract(link)
 	var validList []string
+	fmt.Println(link)
+	resp, err := http.Get(link)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("GET %s: %s", link, resp.Status)
+	}
 
-	for _, link := range list {
-		r, err := url.Parse(link)
+	u, err := base.Parse(link)
+	if err != nil {
+		return nil, err
+	}
+	if base.Host != u.Host {
+		log.Printf("not saving %s: non-local", link)
+		return nil, nil
+	}
+
+	var body io.Reader
+	contentType := resp.Header["Content-Type"]
+	if strings.Contains(strings.Join(contentType, ","), "text/html") {
+		doc, err := html.Parse(resp.Body)
+		resp.Body.Close()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parsing %s as HTML: %v", u, err)
 		}
-		if domain == r.Hostname() {
-			validList = append(validList, link)
+		nodes := linkNodes(doc)
+		validList = linkURLs(nodes, u)
+		rewriteLinks(nodes, u)
+		b := &bytes.Buffer{}
+		err = html.Render(b, doc)
+		if err != nil {
+			log.Printf("render %s: %s", u, err)
 		}
-
+		body = b
 	}
-	p := &Page{links: validList}
 
-	err = save(link, p)
-
-	if err != nil {
-		return nil, err
-	}
+	err = savePage(resp, body)
 	return &Page{links: validList}, nil
 }
 
-type Result struct {
-	curr string
-	list []string
-	e    error
+func rewriteLinks(linkNodes []*html.Node, base *url.URL) {
+	for _, n := range linkNodes {
+		for i, a := range n.Attr {
+			if a.Key != "href" {
+				continue
+			}
+			link, err := base.Parse(a.Val)
+			if err != nil || link.Host != base.Host {
+				continue
+			}
+			link.Scheme = ""
+			link.Host = ""
+			link.User = nil
+			y, err := url.ParseRequestURI(link.String())
+			a.Val = absolutePath + "/" + mirror + y.String()[1:] + "index.html"
+			n.Attr[i] = a
+		}
+	}
 }
+
+func linkNodes(n *html.Node) []*html.Node {
+	var links []*html.Node
+	visitNode := func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			links = append(links, n)
+		}
+	}
+	forEachNode(n, visitNode, nil)
+	return links
+}
+
+//chapter 5 code
+func forEachNode(n *html.Node, pre, post func(n *html.Node)) {
+	if pre != nil {
+		pre(n)
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		forEachNode(c, pre, post)
+	}
+	if post != nil {
+		post(n)
+	}
+}
+
+func linkURLs(linkNodes []*html.Node, base *url.URL) []string {
+	var urls []string
+	for _, n := range linkNodes {
+		for _, a := range n.Attr {
+			if a.Key != "href" {
+				continue
+			}
+			link, err := base.Parse(a.Val)
+			if err != nil {
+				continue
+			}
+			if link.Host != base.Host {
+				continue
+			}
+			urls = append(urls, link.String())
+		}
+	}
+	return urls
+}
+
+var base *url.URL
+var absolutePath string
+var mirror string
 
 func main() {
 	input := os.Args[1]
-	err := os.MkdirAll("./output", 0700)
+	dir, err := os.Getwd()
 	if err != nil {
-		log.Fatal("Could not create directory")
+		log.Println(err)
 	}
-	worklist := make(chan string)
-	results := make(chan Result)
+	absolutePath = dir
+	mirror = strings.Split(input, "//")[1]
 
-	for i := 0; i < 10; i++ {
-		go func() {
-			for url := range worklist {
-				fmt.Println("downloading page: ", url)
-				page, err := downloadPage(url)
-				var urls []string
-				if err == nil {
-					urls = page.listUrls()
-				}
-				results <- Result{curr: url, list: urls, e: err}
-			}
-		}()
+	u, err := url.Parse(input)
+	if err != nil {
+		log.Println(err)
 	}
 
-	seenList := make(map[string]bool)
-	list := []string{}
-	nextUrl := input
-	worklist2 := worklist
-	inProgress := []string{nextUrl}
+	base = u
+	worklist := make(chan []string)
+	var n int
 
-	for {
-		select {
-		case res := <-results:
-			for i, url := range inProgress {
+	n++
+	go func() { worklist <- os.Args[1:] }()
 
-				if url == res.curr {
-					inProgress = append(inProgress[:i], inProgress[i+1:]...)
-				}
+	seen := make(map[string]bool)
+	for ; n > 0; n-- {
+		list := <-worklist
+		for _, link := range list {
+			if !seen[link] {
+				seen[link] = true
+				n++
+				urls, _ := downloadPage(link)
+				go func(link string) {
+					worklist <- urls.links
+				}(link)
 			}
-			if res.e != nil {
-				log.Println(res.e)
-				continue
-			}
-			for _, url := range res.list {
-
-				if !seenList[url] {
-					fmt.Printf("adding %v to list \n", url)
-					seenList[url] = true
-					list = append(list, url)
-				}
-			}
-
-			if len(list) > 0 {
-				if nextUrl == "" {
-					nextUrl = list[0]
-					worklist2 = worklist
-					list = list[1:]
-					inProgress = append(inProgress, nextUrl)
-				}
-			} else {
-				worklist2 = nil
-				nextUrl = ""
-			}
-		case worklist2 <- nextUrl:
-			if len(list) > 0 {
-				nextUrl = list[0]
-				worklist2 = worklist
-				list = list[1:]
-				inProgress = append(inProgress, nextUrl)
-			} else {
-				worklist2 = nil
-				nextUrl = ""
-			}
-
 		}
-
-		if len(list) == 0 && len(inProgress) == 0 {
-			return
-		}
-
 	}
-
 }
