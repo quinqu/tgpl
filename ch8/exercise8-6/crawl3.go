@@ -7,7 +7,7 @@ import (
 	"os"
 	"sync"
 
-	"./links"
+	"gopl.io/ch5/links"
 )
 
 var maxDepth = flag.Int("depth", 2, "Only URLs reachable by at most depth links will be fetched")
