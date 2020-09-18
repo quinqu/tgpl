@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+
 	"./links"
 )
 
@@ -34,7 +35,7 @@ func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 		log.Print(err)
 	}
 
-	for _, l := range list { 
+	for _, l := range list {
 		mux.Lock()
 		if seen[l] {
 			mux.Unlock()
@@ -51,7 +52,7 @@ func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 func main() {
 	flag.Parse()
 	wg := &sync.WaitGroup{}
-	//wg - wait until all go routines are finished to move on 
+	//wg - wait until all go routines are finished to move on
 	wg.Add(1)
 	go crawl(os.Args[len(os.Args)-1], 0, wg)
 	wg.Wait()
