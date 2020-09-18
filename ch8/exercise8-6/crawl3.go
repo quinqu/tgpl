@@ -28,9 +28,6 @@ func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 		return
 	}
 
-
-	
-	
 	// pg 229
 	sem <- struct{}{}
 	list, err := links.Extract(url)
