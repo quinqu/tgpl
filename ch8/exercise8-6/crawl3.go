@@ -14,6 +14,7 @@ var maxDepth = flag.Int("depth", 2, "Only URLs reachable by at most depth links 
 var seen = make(map[string]bool)
 var mux = sync.Mutex{}
 var sem = make(chan struct{}, 20)
+var count = make(map[int]int) //current depth -> num of links
 
 // semaphore is accessed by 20 processes at a time
 // constrains access to at most 20 routines (holds 20 structs)
@@ -21,11 +22,15 @@ var sem = make(chan struct{}, 20)
 
 func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println(url)
-
+	fmt.Println(currDepth, url)
+	count[currDepth] += 1
 	if currDepth >= *maxDepth {
 		return
 	}
+
+
+	
+	
 	// pg 229
 	sem <- struct{}{}
 	list, err := links.Extract(url)
@@ -52,8 +57,9 @@ func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 func main() {
 	flag.Parse()
 	wg := &sync.WaitGroup{}
-	//wg - wait until all go routines are finished to move on
+	// wg - wait until all go routines are finished to move on
 	wg.Add(1)
 	go crawl(os.Args[len(os.Args)-1], 0, wg)
 	wg.Wait()
+	fmt.Println(count)
 }
