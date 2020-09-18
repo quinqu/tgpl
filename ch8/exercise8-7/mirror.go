@@ -183,6 +183,7 @@ func main() {
 	go func() { worklist <- os.Args[1:] }()
 
 	seen := make(map[string]bool)
+
 	for ; n > 0; n-- {
 		list := <-worklist
 		for _, link := range list {
