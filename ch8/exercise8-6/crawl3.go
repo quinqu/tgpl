@@ -4,63 +4,55 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"sync"
-
 	"./links"
 )
 
-var depth = flag.Int("depth", 1, "Only URLs reachable by at most depth links will be fetched")
+var maxDepth = flag.Int("depth", 2, "Only URLs reachable by at most depth links will be fetched")
+var seen = make(map[string]bool)
+var mux = sync.Mutex{}
+var sem = make(chan struct{}, 20)
 
-func crawl(url string, n int, wg *sync.WaitGroup) ([]string, int) {
+// semaphore is accessed by 20 processes at a time
+// constrains access to at most 20 routines (holds 20 structs)
+// used to bound concurrency
+
+func crawl(url string, currDepth int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Println(url)
+
+	if currDepth >= *maxDepth {
+		return
+	}
+	// pg 229
+	sem <- struct{}{}
 	list, err := links.Extract(url)
+	<-sem
+
 	if err != nil {
 		log.Print(err)
 	}
-	n++
-	return list, n
+
+	for _, l := range list { 
+		mux.Lock()
+		if seen[l] {
+			mux.Unlock()
+			continue
+		}
+		seen[l] = true
+		mux.Unlock()
+		wg.Add(1)
+		go crawl(l, currDepth+1, wg)
+	}
+
 }
 
-//!+
 func main() {
 	flag.Parse()
-	worklist := make(chan []string)  // lists of URLs, may have duplicates
-	unseenLinks := make(chan string) // de-duplicated URLs
-	var n int
-	var wg sync.WaitGroup
-	// Add command-line arguments to worklist.
-	go func() {
-		worklist <- flag.Args()
-	}()
-
-	// Create 20 crawler goroutines to fetch each unseen link.
-	for i := 0; i < 20; i++ {
-		go func() {
-
-			for link := range unseenLinks {
-				wg.Add(1)
-				foundLinks, newN := crawl(link, n, &wg)
-				n = newN
-				go func() {
-					worklist <- foundLinks
-				}()
-			}
-		}()
-	}
-
-	seen := make(map[string]bool)
-
-	for n < *depth {
-		list := <-worklist
-		for _, link := range list {
-			if !seen[link] {
-				seen[link] = true
-				unseenLinks <- link
-			}
-		}
-
-	}
+	wg := &sync.WaitGroup{}
+	//wg - wait until all go routines are finished to move on 
+	wg.Add(1)
+	go crawl(os.Args[len(os.Args)-1], 0, wg)
 	wg.Wait()
-
 }
