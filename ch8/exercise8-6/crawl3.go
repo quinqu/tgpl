@@ -2,61 +2,66 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"sync"
 
 	"gopl.io/ch5/links"
 )
 
 var maxDepth = flag.Int("depth", 2, "Only URLs reachable by at most depth links will be fetched")
-var seen = make(map[string]bool)
-var mux = sync.Mutex{}
-var sem = make(chan struct{}, 20)
-var count = make(map[int]int) //current depth -> num of links
 
-// semaphore is accessed by 20 processes at a time
-// constrains access to at most 20 routines (holds 20 structs)
-// used to bound concurrency
+type job struct {
+	link  string
+	depth int
+}
 
-func crawl(url string, currDepth int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	fmt.Println(currDepth, url)
-	count[currDepth] += 1
-	if currDepth >= *maxDepth {
-		return
-	}
-
-	// pg 229
-	sem <- struct{}{}
-	list, err := links.Extract(url)
-	<-sem
-
-	if err != nil {
-		log.Print(err)
-	}
-
-	for _, l := range list {
-		mux.Lock()
-		if seen[l] {
-			mux.Unlock()
-			continue
-		}
-		seen[l] = true
-		mux.Unlock()
-		wg.Add(1)
-		go crawl(l, currDepth+1, wg)
-	}
-
+type result struct {
+	links []string
+	depth int
 }
 
 func main() {
 	flag.Parse()
-	wg := &sync.WaitGroup{}
-	// wg - wait until all go routines are finished to move on
-	wg.Add(1)
-	go crawl(os.Args[len(os.Args)-1], 0, wg)
-	wg.Wait()
-	fmt.Println(count)
+
+	var n int
+
+	worklist := make(chan result) // lists of URLs, may have duplicates
+	unseenLinks := make(chan job) // de-duplicated URLs
+	seen := make(map[string]bool)
+
+	// Create 20 crawler goroutines to fetch each unseen link.
+	for i := 0; i < 20; i++ {
+		go func() {
+			for job := range unseenLinks {
+				foundLinks, err := links.Extract(job.link)
+				if err != nil {
+					log.Println(err)
+				}
+				go func(depth int) {
+					worklist <- result{links: foundLinks, depth: depth + 1}
+				}(job.depth)
+
+			}
+		}()
+	}
+
+	n++
+	// Add command-line arguments to worklist.
+	go func() { worklist <- result{links: os.Args[2:], depth: 0} }()
+
+	for ; n > 0; n-- {
+		res := <-worklist
+		if res.depth >= *maxDepth {
+			continue
+		}
+		for _, l := range res.links {
+			if !seen[l] {
+				seen[l] = true
+				n++
+				log.Println(l)
+				unseenLinks <- job{link: l, depth: res.depth}
+			}
+		}
+
+	}
 }
