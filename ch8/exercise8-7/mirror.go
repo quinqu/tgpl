@@ -190,7 +190,10 @@ func main() {
 			if !seen[link] {
 				seen[link] = true
 				n++
-				urls, _ := downloadPage(link)
+				urls, err := downloadPage(link)
+				if err != nil {
+					log.Println(err)
+				}
 				go func(link string) {
 					worklist <- urls.links
 				}(link)
