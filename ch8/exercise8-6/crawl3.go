@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 
 	"gopl.io/ch5/links"
 )
@@ -24,6 +25,12 @@ func main() {
 	flag.Parse()
 
 	var n int
+	var input []string
+	if strings.Contains(os.Args[1], "depth") {
+		input = os.Args[2:]
+	} else {
+		input = os.Args[1:]
+	}
 
 	worklist := make(chan result) // lists of URLs, may have duplicates
 	unseenLinks := make(chan job) // de-duplicated URLs
@@ -47,7 +54,7 @@ func main() {
 
 	n++
 	// Add command-line arguments to worklist.
-	go func() { worklist <- result{links: os.Args[2:], depth: 0} }()
+	go func() { worklist <- result{links: input, depth: 0} }()
 
 	for ; n > 0; n-- {
 		res := <-worklist
