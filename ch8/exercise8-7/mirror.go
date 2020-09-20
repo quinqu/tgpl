@@ -193,6 +193,7 @@ func main() {
 				urls, err := downloadPage(link)
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 				go func(link string) {
 					worklist <- urls.links
