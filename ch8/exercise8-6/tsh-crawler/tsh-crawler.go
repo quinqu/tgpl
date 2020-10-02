@@ -33,12 +33,6 @@ func (b *Buffer) Write(p string) (n int, err error) {
 	return b.b.WriteString(p)
 }
 
-func (b *Buffer) String() string {
-	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.String()
-}
-
 var directory = kingpin.Flag("directory", "directory to crawl").Required().String()
 var user = kingpin.Flag("user", "Username is the Teleport account username").String()
 var sshProxy = kingpin.Flag("proxy", "host:port the SSH proxy can be accessed at.").Required().String()
@@ -128,7 +122,7 @@ func Extract(root string) ([]string, error) {
 
 	files, err := ioutil.ReadDir(root)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
 	for _, f := range files {
