@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -28,10 +27,10 @@ type Buffer struct {
 	m sync.Mutex
 }
 
-func (b *Buffer) Write(p []byte) (n int, err error) {
+func (b *Buffer) Write(p string) (n int, err error) {
 	b.m.Lock()
 	defer b.m.Unlock()
-	return b.b.Write(p)
+	return b.b.WriteString(p)
 }
 
 func (b *Buffer) String() string {
@@ -40,39 +39,29 @@ func (b *Buffer) String() string {
 	return b.b.String()
 }
 
-//var proxy = kingpin.Flag("proxy", "input the proxy").Required().String()
 var directory = kingpin.Flag("directory", "directory to crawl").Required().String()
-
-// var host = kingpin.Flag("host", "remote host port to connect to").String()
-// var port = kingpin.Flag("port", "port host is binded to").Int()
 var user = kingpin.Flag("user", "Username is the Teleport account username").String()
 var sshProxy = kingpin.Flag("proxy", "host:port the SSH proxy can be accessed at.").Required().String()
-var webProxy = kingpin.Flag("webproxy", "host:port the web proxy can be accessed at.").Required().String()
 
 func main() {
 	kingpin.Parse()
-	//'proxy:host:port@cluster'
 
-	c := teleport.MakeDefaultConfig()
-	c.WebProxyAddr = *sshProxy
-	c.Host = "quin-ThinkPad-P53"
+	c := teleport.Config{}
 
-	//c.SSHProxyAddr = *sshProxy
-	c.Username = *user
-	c.HostLogin = *user
-	//c.InsecureSkipVerify = true
-	dirLister, err := teleport.NewClient(c)
+	path := teleport.FullProfilePath("")
+	c.LoadProfile(path, *sshProxy)
+	c.SSHProxyAddr = *sshProxy
 
+	if *user != "" {
+		c.Username = *user
+		c.HostLogin = *user
+	}
+	dirLister, err := teleport.NewClient(&c)
 	if err != nil {
 		log.Fatalf("can't create new client %v", err)
 	}
-	err = dirLister.SSH(context.TODO(), nil, false)
-	if err != nil {
-		log.Printf("ssh error: %v", err)
-	}
 	newCrawler := crawlerClient{DirLister: dirLister}
-	newCrawler.Crawler("..", *c)
-
+	newCrawler.Crawler(*directory, c)
 }
 
 type crawlerClient struct {
@@ -80,14 +69,9 @@ type crawlerClient struct {
 }
 
 func (tc crawlerClient) Crawler(dir string, c teleport.Config) {
-	log.Println(c.Username)
 	client, err := teleport.NewClient(&c)
 	if err != nil {
 		log.Fatalf("can't create new client %v", err)
-	}
-	err = tc.DirLister.SSH(context.TODO(), nil, false)
-	if err != nil {
-		log.Printf("ssh error: %v", err)
 	}
 
 	out := &bytes.Buffer{}
@@ -107,7 +91,7 @@ func (tc crawlerClient) Crawler(dir string, c teleport.Config) {
 			for job := range unseenDirs {
 				foundDirs, err := Extract(job.dir)
 				if err != nil {
-					log.Println(err)
+					out.WriteString(err.Error())
 				}
 
 				go func(depth int) {
@@ -129,7 +113,7 @@ func (tc crawlerClient) Crawler(dir string, c teleport.Config) {
 			if !seen[l] {
 				seen[l] = true
 				n++
-				out.Write([]byte(l))
+				out.WriteString(l)
 				unseenDirs <- job{dir: l, depth: res.depth}
 			}
 
