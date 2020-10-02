@@ -61,18 +61,14 @@ func main() {
 		log.Fatalf("can't create new client %v", err)
 	}
 	newCrawler := crawlerClient{DirLister: dirLister}
-	newCrawler.Crawler(*directory, c)
+	newCrawler.Crawler(*directory, *newCrawler.DirLister)
 }
 
 type crawlerClient struct {
 	DirLister *teleport.TeleportClient
 }
 
-func (tc crawlerClient) Crawler(dir string, c teleport.Config) {
-	client, err := teleport.NewClient(&c)
-	if err != nil {
-		log.Fatalf("can't create new client %v", err)
-	}
+func (tc crawlerClient) Crawler(dir string, client teleport.TeleportClient) {
 
 	out := &bytes.Buffer{}
 	client.Stdout = out
@@ -113,7 +109,10 @@ func (tc crawlerClient) Crawler(dir string, c teleport.Config) {
 			if !seen[l] {
 				seen[l] = true
 				n++
-				out.WriteString(l)
+				_, err := out.WriteString(l)
+				if err != nil {
+					log.Println(err)
+				}
 				unseenDirs <- job{dir: l, depth: res.depth}
 			}
 
