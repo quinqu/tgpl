@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"log"
-	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	teleport "github.com/gravitational/teleport/lib/client"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -27,49 +29,34 @@ type Buffer struct {
 	m sync.Mutex
 }
 
-func (b *Buffer) Write(p string) (n int, err error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.WriteString(p)
-}
-
 var directory = kingpin.Flag("directory", "directory to crawl").Required().String()
-var user = kingpin.Flag("user", "Username is the Teleport account username").String()
 var sshProxy = kingpin.Flag("proxy", "host:port the SSH proxy can be accessed at.").Required().String()
+var userAndHost = kingpin.Arg("user@host", "user and host of the remote server").Required().String()
 
 func main() {
 	kingpin.Parse()
-
-	c := teleport.Config{}
-
-	path := teleport.FullProfilePath("")
-	c.LoadProfile(path, *sshProxy)
-	c.SSHProxyAddr = *sshProxy
-
-	if *user != "" {
-		c.Username = *user
-		c.HostLogin = *user
-	}
-	dirLister, err := teleport.NewClient(&c)
-	if err != nil {
-		log.Fatalf("can't create new client %v", err)
-	}
-	newCrawler := crawlerClient{DirLister: dirLister}
-	newCrawler.Crawler(*directory, *newCrawler.DirLister)
+	logrus.SetLevel(logrus.ErrorLevel)
+	Crawl([]string{*directory})
 }
 
-type crawlerClient struct {
-	DirLister *teleport.TeleportClient
+func parseDirectories(directories string) []string {
+	dirs := strings.Split(directories, "\n")
+	var newDirs []string
+
+	for i := range dirs {
+		if dirs[i] == "" {
+			continue
+
+		}
+		newDirs = append(newDirs, dirs[i][0:len(dirs[i])-1])
+	}
+	return newDirs
 }
 
-func (tc crawlerClient) Crawler(dir string, client teleport.TeleportClient) {
-
-	out := &bytes.Buffer{}
-	client.Stdout = out
-	client.Stderr = out
+func Crawl(dirs []string) {
 
 	var n int
-	input := []string{*directory}
+	input := dirs
 	worklist := make(chan result)
 	unseenDirs := make(chan job)
 	seen := make(map[string]bool)
@@ -79,10 +66,7 @@ func (tc crawlerClient) Crawler(dir string, client teleport.TeleportClient) {
 	for i := 0; i < 20; i++ {
 		go func() {
 			for job := range unseenDirs {
-				foundDirs, err := Extract(job.dir)
-				if err != nil {
-					out.WriteString(err.Error())
-				}
+				foundDirs := Extract(job.dir)
 
 				go func(depth int) {
 					worklist <- result{dirs: foundDirs, depth: depth + 1}
@@ -103,10 +87,7 @@ func (tc crawlerClient) Crawler(dir string, client teleport.TeleportClient) {
 			if !seen[l] {
 				seen[l] = true
 				n++
-				_, err := out.WriteString(l)
-				if err != nil {
-					log.Println(err)
-				}
+				log.Println(l)
 				unseenDirs <- job{dir: l, depth: res.depth}
 			}
 
@@ -117,22 +98,45 @@ func (tc crawlerClient) Crawler(dir string, client teleport.TeleportClient) {
 	wg.Wait()
 }
 
-func Extract(root string) ([]string, error) {
-	var dirs []string
+func Extract(root string) []string {
 
-	files, err := ioutil.ReadDir(root)
+	userHost := strings.Split(*userAndHost, "@")
+	if len(userHost) != 2 {
+		log.Fatalf("invalid user and host")
+	}
+	user := userHost[0]
+	host := userHost[1]
+
+	c := teleport.Config{}
+
+	path := teleport.FullProfilePath("")
+	c.LoadProfile(path, *sshProxy)
+	c.SSHProxyAddr = *sshProxy
+	c.Host = host
+	c.Username = user
+	c.HostLogin = user
+	out := &bytes.Buffer{}
+
+	c.Stdout = out
+	c.Stderr = ioutil.Discard
+
+	dirLister, err := teleport.NewClient(&c)
 	if err != nil {
-		return nil, err
+		log.Fatalf("can't create new client %v", err)
 	}
 
-	for _, f := range files {
-		path := root + "/" + f.Name()
-		segments := strings.Split(path, string(filepath.Separator))
-		log.Println(segments)
-		if f.IsDir() {
-			dirs = append(dirs, path)
+	err = dirLister.SSH(context.TODO(), []string{"cd " + root + " && ls -d */"}, false)
+
+	if err != nil {
+		if out.String() == "" {
+			return nil
 		}
+		log.Fatalf("ssh error: %v", err)
 	}
 
-	return dirs, nil
+	dirs := parseDirectories(out.String())
+	for i := range dirs {
+		dirs[i] = root + "/" + dirs[i]
+	}
+	return dirs
 }
